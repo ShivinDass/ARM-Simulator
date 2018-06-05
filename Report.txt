@@ -1,0 +1,282 @@
+Methodology
+We have broken down the project into numerous milestones that can be achieved sequentially.
+First, we shall determine the instruction set that we would implement, following which we
+would identify the codes corresponding to each of those instructions. After we have selected
+the instructions to be implemented, we shall code the 5-stage pipeline in Java. We shall write
+the code for the following 5 stages:
+1. Fetch: Read instruction from .MEM file
+2. Decode: Check opcode and determine instruction type, and break instructions into
+corresponding fields based on the opcode
+3. Execute: Perform the required computation
+4. Memory: Store/retrieve data into/from memory
+5. Write-back: Write data back to register file
+
+
+Project Plan
+Each register in the register file shall be implemented using a 32-bit array, and all data and
+instructions in memory shall be stored in a file. The project essentially requires the
+implementation of the 5 stages of a pipeline – fetch, decode, execute, memory and write-back
+– of an ARM architecture in a high level language. The details of how we shall proceed with
+each stage are as follows:
+
+Fetch: To retrieve the instructions given to us in a file, we shall use file handling to read the file line-
+by-line, with each line corresponding to a single instruction. The 8-character text following
+‘0x’ representing the hexadecimal code shall be sent further to the decode stage.
+
+Decode: In order to decode the instruction that is read, we shall first convert the hexadecimal code into
+its equivalent 32-bit binary code and put each of those bits in the corresponding positions of a
+32-size array. We will compare the bits corresponding to the bits of the opcode with the various
+possible opcodes using a switch case, based on which we shall determine the instruction type
+– whether the instruction is of the R, I or J type. Based on the instruction type, we shall further
+segregate the bits stored in the fields demarcated by the instruction type and rather than storing the hexadecimal instruction that has been converted to binary bitwise into an array, we chose to use strings with each character representing a 0 or 1 instead, due to the relative straightforwardness of extracting fields from the instruction from a bit string using string slicing, thereby avoiding unnecessary complications.
+
+Execute: Once the instruction has been identified and the various fields have been stored in their
+respective 32-bit arrays, we shall perform the required arithmetic operations on them.
+
+Memory: If the instruction involves reading from/writing to a memory location, we shall read from/write
+to the file representing the memory. The data stored in the memory file shall be in 0s and 1s to
+simulate how the real memory stores data, and reading and writing shall be using byte-
+addressing.
+
+Write-Back: For instructions that involve writing data back into a register, we shall store the data obtained
+from the result of the execution stage/from a load into the 32-size array corresponding to the
+destination register.
+
+
+Implemented Solution
+Our ARM Simulator has been implemented in Java. In order to replicate the register file, we
+have used an integer array of size 16. The memory has been divided into two segments –
+instruction memory and data memory. The instruction memory is used to store the instructions
+that are read from the given file to be processed one at a time during the instruction cycle, and
+it has been implemented using an ArrayList of strings. The data memory, on the other hand,
+is used to store and read integer data values, and has been implemented using an ArrayList
+of integers. There are also a number of class variables that we have used, which can be accessed
+by any method. They include the following:
+• opcode : An integer variable that holds the value of the opcode that has been decoded
+from the instruction that has been read.
+• imm : An integer variable that is set to 1 if the 25 th bit of the instruction is high; 0
+otherwise.
+• condition : An integer variable that holds the value of the first 4 bits of the instruction.
+• I : An integer variable that is set to 1 if the 27 th bit of the instruction is high; 0 otherwise.
+• F : An integer variable that is set to 1 if the 26 th bit of the instruction is high; 0 otherwise.
+• N : An integer variable that is used to replicate the functionality of the 31 st bit of the
+instruction. It is set to 1 if the first operand is less than the second operand in a CMP
+instruction; 0 otherwise.
+• Z : An integer variable that is used to replicate the functionality of the 30 th bit of the
+instruction. It is set to 1 if the first operand is equal to the second operand in a CMP
+instruction; 0 otherwise.
+• op1 : An integer variable that holds the value of the first operand, if any.
+• op2 : An integer variable that holds the value of the second operand, if any.
+• dest : An integer variable that holds the register number of the destination register.
+• off : An integer variable that holds the value of the offset.
+• Rd : An integer variable that holds the result of the execute stage to be stored in the
+register denoted by dest during the write back stage, if required.
+• address : An integer variable that holds the address of the data memory from/to which
+a load/store operation is to take place.
+• isLS : A Boolean variable that is set to true if the shift is a logical left shift; false
+otherwise.
+• shamt : An integer variable that holds the value of the shift amount.
+• instruction : A String variable that holds the current instruction in the form of a 32-
+character string of 0s and 1s.
+
+
+Our program starts by invoking the loadInstructionMemory method, which reads the
+given .mem file line by line and adds each line as an element in instructionMemory , an
+array list of strings. Once the instruction memory is ready, the run method is invoked, which
+consists of a single while loop with the condition set to true . The loop contains five methods
+to simulate the instruction cycle, namely fetch , decode , execute , memory and
+writeBack .
+The fetch method gets the instructionMemory at the index specified by the value of
+R[15] , the program counter, and stores it in instruction . It then increments the program
+counter value. The method ends by printing the instruction and the address that it has been
+fetched from to the console.
+The decode method uses the instruction fetched in the fetch stage to determine the values of
+I , F , shamt and isLS from instruction . Based on the values of I and F , it further
+determines the values of opcode , imm , op1 , op2 , dest , off and condition (whichever are
+required) by extracting the values from instruction . If imm is found to be 1, op2 is directly
+set to the value of the second source operand, else op2 is set to the value stored in the register
+whose index is given by the second source operand. Based on the operation, source operands
+and destination that have been identified, a message is printed to the console accordingly.
+Based on the values of I and F , the execute method performs the required operation. In case
+of the operations having both I and F as 0, the value of the register given by the first source
+operand is assigned to a temporary variable a . Further, if imm is 1, the second source operand
+is directly assigned to another temporary variable b ; else, the value of the register given by the
+second source operand is assigned to b . In the latter case, if shamt is greater than 0, the required
+logical shift is applied to b . Since logical left shift operation is not facilitated directly by Java,
+in case of a logical left shift, we handled the condition ourselves using string slicing and
+appending operations on the 32-bit binary string of the value in b. The list of operations that
+we have implemented for IF = 00 correspond to arithmetic operations, logical operations and
+move between registers, and are as follows:
+• AND (AND)
+• EOR (Exclusive OR)
+• SUB (Subtract)
+• RSB (Reverse Subtract)
+• ADD (Add)
+• CMP (Compare)
+• ORR (OR)
+• MOV (Move Register or Constant)
+The result of each of these operations is stored in Rd , to be written to the destination register
+during the write back stage.
+The list of operations that we have implemented for IF = 01 correspond to store and load
+operations, and are as follows:
+• STR (Store Register to Memory)
+• LDR (Load Register from Memory)
+In these operations, the address to/from which the store/load operation is to be done into/from
+dataMemory is computed and stored in address , which is used in the memory stage to
+perform the actual store/load.
+The list of operations that we have implemented for IF = 01 correspond to branch operations,
+and are as follows:
+• BEQ (Branch if Equal)
+• BNE (Branch if Not Equal)
+• BGE (Branch if Greater Than or Equal)
+• BLT (Branch if Less Than)
+• BGT (Branch if Greater Than)
+• BLE (Branch if Less Than or Equal)
+• BAL (Branch Always)
+For these operations, we have first determined whether the 24-bit offset stored in off is
+positive or negative. If it is positive, we set a temporary variable distance equal to off ; else
+we sign extend the negative offset to 32 bits by doing a bitwise OR between 0xFF000000 and
+off , and set distance equal to this value. The value of distance is used to determine the
+final offset, and subsequently set R[15] to distance + 1 , thereby changing the value of the
+program counter.
+Each operation has a corresponding print statement associated with it, which prints the
+operation and its specifications to the console.
+In case of LDR / STR operations, the memory method is used to access the data memory and
+perform the required load/store. In case the operation is LDR , the location in dataMemory
+specified by address is accessed and the value stored in it is assigned to Rd , to be subsequently
+written to the destination register during the write back stage. In case the operation is STR , the
+value stored in R[dest] , the destination register, is stored in dataMemory at the index
+specified by address . A print statement explaining the operation that took place along with
+the source, destination and address is also present.
+The writeBack method is used to write the data present in Rd into R[dest] , the destination
+register, if an operation requiring the destination register to be updated has been executed. We
+have also included the handling of three swi instructions within writeBack , which are
+checked if IF = 11 , and are as follows:
+• swi 0x11 (Halt Execution)
+• swi 0x6b (Write Integer)
+• swi 0x6c (Read Integer)
+
+
+
+Test Cases
+/////////////////////////
+MOV R4,#4
+MOV R5,#6
+STR R4,[R5,#20]
+LDR R1,[R5,#20]
+
+1 0xE3A04004
+2 0xE3A05006
+3 0xE5854014
+4 0xE5951014
+5 0xEF000011
+
+/////////////////////////
+
+//Fibonnacci (not made by us)
+0 0xE3A0500A
+1 0xE3A04002
+2 0xE3A06000
+3 0xE3A07001
+4 0xE3A08000
+5 0xE1540005
+6 0xCA000004
+7 0xE0876008
+8 0xE1A08007
+9 0xE1A07006
+10 0xE2844001
+11 0xBAFFFFF8
+13 0xEF000011
+
+////////////////////////
+
+//Mansi Goel GIT
+0x0 0xE3A02000
+0x4 0xE3A03000
+0x8 0xE3A05000
+0xC 0xE5842000
+0x10 0xE2822001
+0x14 0xE5842004
+0x18 0xE2822001
+0x1C 0xE5842008
+0x20 0xE2822001
+0x24 0xE584200C
+0x28 0xE2822001
+0x2C 0xE5842010
+0x30 0xE3A02000
+0x34 0xE5942000
+0x38 0xE0855002
+0x3C 0xE5942004
+0x40 0xE0855002
+0x44 0xE5942008
+0x48 0xE0855002
+0x4C 0xE594200C
+0x50 0xE0855002
+0x54 0xE5942010
+0x58 0xE0855002
+0x5C 0xE5845014
+0x60 0xEF000011
+
+///////////////////////
+
+MOV R4,#3
+MOV R5,#2
+ADD R2, R4,R5, LSL R5/#2
+//LSL
+1 0xE3A04003
+2 0xE3A05002
+3 0xE0842105
+4 0xEF000011
+
+//LSR
+1 0xE3A04003
+2 0xE3A05002
+3 0xE0842125
+4 0xEF000011
+
+
+//LSL with register
+1 0xE3A04003
+2 0xE3A05002
+3 0xE0842515
+4 0xEF000011
+
+//LSR with register
+1 0xE3A04003
+2 0xE3A05002
+3 0xE0842535
+4 0xEF000011
+
+
+
+
+//////////////////
+SWI input
+
+mov r4, #124
+mov r0, #0
+swi 0x6c
+mov r1,r0
+swi SWI_PrInt
+
+1 0xE3A0407C
+2 0xE3A00000
+3 0xEF00006C
+4 0xE1A01000
+5 0xEF00006B
+6 0xEF000011
+
+////////////////
+mov r4, #2
+mov r5, #100
+mul r6,r4,r5
+
+1 0xE3A04002
+2 0xE3A05064
+3 0xE0060594
+4 0xEF000011
+
+
+
+
+
